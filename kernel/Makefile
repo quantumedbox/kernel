@@ -5,20 +5,16 @@ display_dir := ./display
 
 .PHONY: clean run
 
-all: entry.o kernel.a
+all: entry.o io.o display.o
 
 entry.o: entry.cpp
-	$(CXX) -m32 -c $< $(shared_args) -Os -o _tmp$@
-	objcopy -O elf32-i386 _tmp$@ $@
-
-kernel.a: io.o display.o
-	ar cr $@ $^
+	$(CXX) -m32 -c $< $(shared_args) -Os -o $@
 
 io.o: $(io_dir)/port.cpp
-	$(CXX) -m32 -c $< $(shared_args) -O3 -o $@
+	$(CXX) -m32 -c $< $(shared_args) -Os -o $@
 
 display.o: $(display_dir)/display.cpp
-	$(CXX) -m32 -c $< $(shared_args) -O3 -o $@
+	$(CXX) -m32 -c $< $(shared_args) -Os -o $@
 
 clean:
 	$(RM) *.a *.o
