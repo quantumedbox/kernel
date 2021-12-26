@@ -1,31 +1,41 @@
-CXX := g++
+CXX := i686-elf-g++
+CXX_SOURCES = $(wildcard ./kernel/*.cpp ./kernel/io/*.cpp ./kernel/display/*.cpp)
+OBJ = ${CXX_SOURCES:.cpp=.o}
 
-boot_src_dir = ./boot
-kernel_src_dir = ./kernel
+# boot_src_dir = ./boot
+# kernel_src_dir = ./kernel
 
-.PHONY: clean run
+CXXFLAGS := -ffreestanding -nostdlib -g -Wall -Wextra -Os -fno-exceptions -fno-rtti
+log_name := "log.txt"
 
-all: run
+.PHONY: clean run debug
 
-kernel.bin: $(kernel_src_dir)/entry.o $(kernel_src_dir)/io.o $(kernel_src_dir)/display.o
-	ld -mi386pe -T NUL -o _tmp$@ -Ttext 0x1000 $^
-	objcopy -O binary -j .text _tmp$@ $@
-
-kernel_entry.o: $(boot_src_dir)/kernel_entry.asm
-	nasm $< -f elf32-i386 -o $@
-
-boot.bin: $(boot_src_dir)/boot.asm
-	nasm $< -f bin -o $@ -I $(boot_src_dir)
-
-$(kernel_src_dir)/%.o:
-	$(MAKE) -C $(kernel_src_dir)
-
-os-image.bin: boot.bin kernel.bin
+os-image.bin: boot/bootsect.bin kernel.bin
 	cat $^ > $@
 
+kernel.bin: boot/kernel_entry.o $(OBJ)
+	i686-elf-ld -T link.ld -o $@ -Ttext 0x1000 $^ --oformat binary
+
+kernel.elf: boot/kernel_entry.o $(OBJ)
+	i686-elf-ld -o $@ -Ttext 0x1000 $^ 
+
+%.o: %.cpp
+	${CXX} ${CXXFLAGS} -c $< -o $@ -I ./kernel/
+
+%.o: %.asm
+	nasm $< -f elf -o $@ -I ./boot/
+
+%.bin: %.asm
+	nasm $< -f bin -o $@ -I ./boot/
+
 run: os-image.bin
-	qemu-system-i386 -fda $<
+	qemu-system-i386 -drive format=raw,file=$< -serial file:$(log_name)
+
+debug: os-image.bin # image.elf
+	qemu-system-i386 -s -S -drive format=raw,file=$< -serial file:$(log_name) &
+	i686-elf-gdb -ex "target remote localhost:1234" -ex "symbol-file kernel.bin"
 
 clean:
-	$(RM) *.bin *.o *.dis _tmp*.*
-	$(MAKE) -C $(kernel_src_dir) clean
+	find ./ -type f -name '*.bin' -exec rm {} +
+	find ./ -type f -name '*.o' -exec rm {} +
+	$(RM) *.dis _tmp*.* *.elf *.sym $(log_name)

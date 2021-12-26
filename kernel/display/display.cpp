@@ -1,48 +1,147 @@
+#include <limits.h>
+
 #include "display.hpp"
 #include "io/port.hpp"
+#include "memory.h"
 
-namespace Display {
+// helpful reference: http://www.osdever.net/FreeVGA/vga/crtcreg.htm#0A
 
-enum { VGA_OFFSET_LOW = 0x0f, VGA_OFFSET_HIGH = 0x0e };
-enum { VGA_CTRL_REGISTER = 0x3d4, VGA_DATA_REGISTER = 0x3d5 };
+#define IS_VISIBLE_ASCII(ch) ((ch) >= 0x20) && ((ch) <= 0x7e)
+#define IS_PRINTABLE(ch) IS_VISIBLE_ASCII(ch) | ((ch) == '\n')
+#define IS_STRING_AT_NULL(str) (*str == 0)
 
-static IO::Port ctrl_port { VGA_CTRL_REGISTER };
-static IO::Port data_port { VGA_DATA_REGISTER };
+namespace VgaDisplay {
 
-const intptr_t VIDEOMEM_ADDRESS = 0xb8000;
-const uint8_t ROWS = 25;
-const uint8_t COLONS = 80;
+// those depend on currently selected mode
+static uint16_t width = 80;
+static uint16_t height = 25;
 
-namespace Styles {
-  const uint8_t white_on_black = 0x0f;
-}
+uint16_t get_width() { return width; }
+uint16_t get_height() { return height; }
 
-void set_cursor(int32_t offset) {
-  ctrl_port.put_byte(VGA_OFFSET_HIGH);
+enum { CTRL_REGISTER = 0x03d4, DATA_REGISTER = 0x03d5 };
+enum {
+  CURSOR_START_REG = 0x0a, // 5th bit states whether cursor is enabled
+  CURSOR_OFFSET_HIGH = 0x0e,
+  CURSOR_OFFSET_LOW = 0x0f,
+};
+
+static constexpr IO::Port ctrl_port { CTRL_REGISTER };
+static constexpr IO::Port data_port { DATA_REGISTER };
+
+static volatile uint8_t* VIDEOMEM_BASE = (uint8_t*)0xb8000;
+// position in VIDEOMEM_BASE that is expected to be used as output
+static size_t current_offset = 0; // todo: make it size_t?
+static StyleAttribute current_style = init_style<Color::White, Color::Black>();
+
+// void init() {
+//   ctrl_port.ctrl_port();
+//   data_port.data_port();
+// }
+
+struct StateCapture {
+  uint16_t cursor;
+  uint16_t offset;
+  StyleAttribute style;
+
+  inline StateCapture()
+    : cursor (get_cursor_pos())
+    , offset (get_offset())
+    , style (get_style())
+  {
+
+  }
+
+  inline void release() {
+    set_cursor_pos(cursor);
+    set_offset(offset);
+    set_style(style);
+  }
+
+};
+
+void set_cursor_pos(uint16_t offset) {
+  ctrl_port.put_byte(CURSOR_OFFSET_LOW);
+  data_port.put_byte(offset & 0xff);
+  ctrl_port.put_byte(CURSOR_OFFSET_HIGH);
   data_port.put_byte(offset >> 8);
-  ctrl_port.put_byte(VGA_OFFSET_LOW);
-  data_port.put_byte(offset && 0xff);
 }
 
-auto get_cursor() -> uint32_t {
-  ctrl_port.put_byte(VGA_OFFSET_HIGH);
-  int32_t offset = data_port.take_byte() << 8;
-  ctrl_port.put_byte(VGA_OFFSET_LOW);
+// todo: we can cache it in kernel memory
+uint16_t get_cursor_pos() {
+  ctrl_port.put_byte(CURSOR_OFFSET_HIGH);
+  int16_t offset = data_port.take_byte() << 8;
+  ctrl_port.put_byte(CURSOR_OFFSET_LOW);
   offset += data_port.take_byte();
   return offset;
 }
 
-void put_char(uint8_t character, uint32_t offset) {
-  uint8_t* videomem = reinterpret_cast<uint8_t*>(VIDEOMEM_ADDRESS);
-  videomem[offset * 2] = character;
-  videomem[offset * 2 + 1] = Styles::white_on_black;
+void set_offset(uint16_t offset) {
+  current_offset = (size_t)(offset * 2);
 }
 
-void clear_screen() {
-  for (int32_t i = 0; i < COLONS * ROWS; ++i) {
-    put_char(' ', i);
+uint16_t get_offset() {
+  return current_offset;
+}
+
+void set_style(StyleAttribute style) {
+  current_style = style;
+}
+
+StyleAttribute get_style() {
+  return current_style;
+}
+
+// todo: check whether offset is in bounds?
+// todo: error propagation
+void put_char(uint8_t character) {
+  VIDEOMEM_BASE[current_offset] = character;
+  VIDEOMEM_BASE[current_offset + 1] = (uint8_t)current_style;
+  current_offset += 2;
+}
+
+// todo: kinda not ideal to use macro
+#define put_string_impl_expand(xxx_string) do { \
+  if (!IS_POINTER_VALID((xxx_string).chars)) \
+    return; \
+  for (size_t xxx_idx = 0; xxx_idx < (xxx_string).len; ++xxx_idx) { \
+    uint8_t xxx_ch = (xxx_string).chars[xxx_idx]; \
+    if (IS_PRINTABLE(xxx_ch)) \
+      put_char(xxx_ch); \
+  } \
+} while (0)
+
+void put_string(const String string) {
+  put_string_impl_expand(string);
+}
+
+void put_uint32(uint32_t value) {
+  const size_t MAX_CHARS = 3 * sizeof(uint32_t) * CHAR_BIT / 8;
+
+  uint8_t builder_buff[MAX_CHARS];
+  uint32_t builder_idx = MAX_CHARS;
+
+  uint32_t reductor = value;
+  do {
+    builder_buff[--builder_idx] = (reductor % 10) + 0x30;
+    reductor /= 10;
+  } while (reductor != 0);
+
+  put_string_impl_expand(init_string(&builder_buff[builder_idx], MAX_CHARS - builder_idx));
+}
+
+void fill_screen(uint8_t ch) { 
+  for (uint32_t i = get_display_area(); i--;) {
+    VIDEOMEM_BASE[i * 2] = ch;
+    VIDEOMEM_BASE[i * 2 + 1] = (uint8_t)current_style;
   }
-  // todo: move to (0, 0)
+}
+
+void hide_cursor() {
+  ctrl_port.put_byte(CURSOR_START_REG);
+  data_port.put_byte(0x01 << 5);
+  ctrl_port.put_byte(CURSOR_START_REG);
+  data_port.put_byte(0x01 << 5);
 }
 
 }

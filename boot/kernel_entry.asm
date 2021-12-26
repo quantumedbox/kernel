@@ -1,4 +1,4 @@
 [bits 32]
-[extern _kernel_entry]
-call _kernel_entry
+[extern kernel_entry] ; Define calling point. Must have same name as kernel.c 'main' function
+call kernel_entry ; Calls the C function. The linker will know where it is placed in memory
 jmp $
