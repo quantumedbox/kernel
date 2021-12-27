@@ -3,8 +3,8 @@
 #include <stdint.h>
 
 typedef struct {
-  size_t len;
-  uint8_t* chars;
+  const size_t len;
+  const uint8_t* chars;
 } String;
 
 #define string_from_literal(str) (String){ sizeof(str), (uint8_t*)str }

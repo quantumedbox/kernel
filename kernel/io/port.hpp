@@ -25,11 +25,11 @@ public:
   uint8_t take_byte() const;
 };
 
-enum class SerialPortAddress : uint16_t {
-  First = 0x03f8,
-  Second = 0x02f8,
-  Third = 0x03e8,
-  Forth = 0x02e8
+const uint16_t SERIAL_PORT_ADDRESSES[] = {
+  0x03f8, // COM1
+  0x02f8, // COM2
+  0x03e8, // COM3
+  0x02e8, // COM4
 };
 
 class SerialPort {
@@ -40,8 +40,8 @@ private:
   bool initialize();
 
 public:
-  SerialPort(SerialPortAddress addr)
-    : m_port((uint16_t)addr)
+  SerialPort(uint16_t addr)
+    : m_port(addr)
     , m_is_ok(this->SerialPort::initialize())
   {
 

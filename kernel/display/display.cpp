@@ -34,11 +34,6 @@ static volatile uint8_t* VIDEOMEM_BASE = (uint8_t*)0xb8000;
 static size_t current_offset = 0; // todo: make it size_t?
 static StyleAttribute current_style = init_style<Color::White, Color::Black>();
 
-// void init() {
-//   ctrl_port.ctrl_port();
-//   data_port.data_port();
-// }
-
 struct StateCapture {
   uint16_t cursor;
   uint16_t offset;
@@ -128,6 +123,10 @@ void put_uint32(uint32_t value) {
   } while (reductor != 0);
 
   put_string_impl_expand(init_string(&builder_buff[builder_idx], MAX_CHARS - builder_idx));
+}
+
+void newline_offset() {
+  set_offset(((get_offset() / width) + 1) * width);
 }
 
 void fill_screen(uint8_t ch) { 

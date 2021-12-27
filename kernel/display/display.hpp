@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "std/types.hpp"
+#include "std/string.hpp"
 
 // todo: additional 0x13 mode for image output
 // todo: font overriding, possibly for creating cursors and other more complex things
@@ -51,8 +51,6 @@ constexpr StyleAttribute init_style()
   return result;
 }
 
-// void init();
-
 uint16_t get_width();
 uint16_t get_height();
 inline uint32_t get_display_area() { return get_width() * get_height(); }
@@ -67,8 +65,17 @@ StyleAttribute get_style();
 void set_offset(uint16_t offset);
 uint16_t get_offset();
 
+/* WARNING: all printing function which depend on some global state (aka offset and style)
+            shouldn't be used inside exception handlers as there's no guarantee that interrupt doesn't
+            come from another printing call which haven't changed the state yet
+*/
+
+/*
+  @brief  Moves offset to the next line compared to current offset
+*/
+void newline_offset();
+
 void put_char(uint8_t);
-// void put_null_string(const uint8_t*);
 void put_string(const String);
 void put_uint32(uint32_t);
 
