@@ -51,32 +51,32 @@ void register_interrupt_handler(uint8_t idx, InterruptHandler handler) {
   interrupt_handlers[idx] = handler;
 }
 
-constexpr String exception_messages[N_RESERVED_IDT_EXCEPTIONS] = {
-  string_from_literal("div by 0"),
-  string_from_literal("-- single-step interrupt"),
-  string_from_literal("-- non-maskable interrupt"),
-  string_from_literal("-- breakpoint"),
-  string_from_literal("overflow"),
-  string_from_literal("bound range exceeded"),
-  string_from_literal("invalid opcode"),
-  string_from_literal("coprocessor not available"),
-  string_from_literal("double fault"),
-  string_from_literal("invalid task state segment"),
-  string_from_literal("segment not present"),
-  string_from_literal("stack segment fault"),
-  string_from_literal("-- general protection fault"),
-  string_from_literal("page fault"),
-  string_from_literal("-- reserved interrupt"),
-  string_from_literal("floating point exception"),
-  string_from_literal("alignment check"),
-  string_from_literal("machine check"),
-  string_from_literal("simd floating point exception"),
-  string_from_literal("virtualization exception"),
-  string_from_literal("control protection exception")
-};
+// constexpr KS::String exception_messages[N_RESERVED_IDT_EXCEPTIONS] = {
+//   KS::String("div by 0"),
+//   KS::String("-- single-step interrupt"),
+//   KS::String("-- non-maskable interrupt"),
+//   KS::String("-- breakpoint"),
+//   KS::String("overflow"),
+//   KS::String("bound range exceeded"),
+//   KS::String("invalid opcode"),
+//   KS::String("coprocessor not available"),
+//   KS::String("double fault"),
+//   KS::String("invalid task state segment"),
+//   KS::String("segment not present"),
+//   KS::String("stack segment fault"),
+//   KS::String("-- general protection fault"),
+//   KS::String("page fault"),
+//   KS::String("-- reserved interrupt"),
+//   KS::String("floating point exception"),
+//   KS::String("alignment check"),
+//   KS::String("machine check"),
+//   KS::String("simd floating point exception"),
+//   KS::String("virtualization exception"),
+//   KS::String("control protection exception")
+// };
 
 extern "C" void isr_handler(Registers* r) {
-  VgaDisplay::put_string(exception_messages[r->int_no]);
+  // VgaDisplay::put_string(exception_messages[r->int_no]);
   // VgaDisplay::newline_offset();
 }
 

@@ -56,7 +56,7 @@ void set_led_state(LedState state) {
   ps2_register.put_byte(0xed);
   uint8_t response = ps2_register.take_byte();
   if (response != ACKNOWLEDGEMENT) {
-    VgaDisplay::put_string(string_from_literal("cannot set LED state"));
+    VgaDisplay::put_string(KS::String("cannot set LED state"));
   }
   ps2_register.put_byte((uint8_t)state);
 }

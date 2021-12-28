@@ -97,16 +97,14 @@ void put_char(uint8_t character) {
 
 // todo: kinda not ideal to use macro
 #define put_string_impl_expand(xxx_string) do { \
-  if (!IS_POINTER_VALID((xxx_string).chars)) \
-    return; \
-  for (size_t xxx_idx = 0; xxx_idx < (xxx_string).len; ++xxx_idx) { \
-    uint8_t xxx_ch = (xxx_string).chars[xxx_idx]; \
+  for (size_t xxx_idx = 0; xxx_idx < (xxx_string).get_len(); ++xxx_idx) { \
+    uint8_t xxx_ch = (xxx_string).get_view()[xxx_idx]; \
     if (IS_PRINTABLE(xxx_ch)) \
       put_char(xxx_ch); \
   } \
 } while (0)
 
-void put_string(const String string) {
+void put_string(const KS::String string) {
   put_string_impl_expand(string);
 }
 
@@ -122,7 +120,7 @@ void put_uint32(uint32_t value) {
     reductor /= 10;
   } while (reductor != 0);
 
-  put_string_impl_expand(init_string(&builder_buff[builder_idx], MAX_CHARS - builder_idx));
+  put_string_impl_expand(KS::String(&builder_buff[builder_idx], MAX_CHARS - builder_idx));
 }
 
 void newline_offset() {

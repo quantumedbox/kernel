@@ -10,6 +10,9 @@ log_name := "log"
 # os-image.bin: boot/bootsect.bin kernel.bin
 # 	cat $^ > $@
 
+os-image.bin: os-image.elf
+	objcopy -S $< $@
+
 os-image.elf: boot/multiboot1/entry.o boot/kernel_entry.o $(OBJ)
 	i686-elf-ld -T link.ld -o $@ $^
 
@@ -22,12 +25,12 @@ os-image.elf: boot/multiboot1/entry.o boot/kernel_entry.o $(OBJ)
 %.bin: %.asm
 	nasm $< -f bin -o $@ -I ./boot/
 
-run: os-image.elf
+run: os-image.bin
 	qemu-system-i386 -kernel $< -serial file:$(log_name)
 
-# debug: os-image.bin os-image.elf
-# 	qemu-system-i386 -s -S -drive format=raw,file=$< -serial file:$(log_name) &
-# 	i686-elf-gdb -ex "target remote localhost:1234" -ex "symbol-file os-image.elf"
+debug: os-image.elf
+	qemu-system-i386 -s -kernel $< -serial file:$(log_name) &
+	gdb -ex "target remote localhost:1234" -ex "symbol-file os-image.elf" -ex "b kernel_entry" -ex "c"
 
 clean:
 	find ./ -type f -name '*.bin' -exec rm {} +

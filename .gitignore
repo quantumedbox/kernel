@@ -1,7 +1,8 @@
-*.bin
-.o
-_tmp*.*
-*.sym
-*.elf
+**/*.bin
+**/*.o
+**/_tmp*.*
+**/*.sym
+**/*.elf
 log
 *.sublime-project
+*.sublime-workspace

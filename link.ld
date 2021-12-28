@@ -8,24 +8,24 @@ SECTIONS {
 
   __kernel_base = .;
 
-  .text BLOCK(4K) : ALIGN(4K) {
+  .text /*BLOCK(4K)*/ :/* ALIGN(4K)*/ {
     __text_start = .;
     *(.multiboot)
     *(.text)
     __text_end = .;
   }
 
-  .rodata BLOCK(4K) : ALIGN(4K) {
+  .rodata /*BLOCK(4K)*/ :/* ALIGN(4K)*/ {
     __rodata_start = .;
     *(.rodata)
   }
 
-  .data BLOCK(4K) : ALIGN(4K) {
+  .data /*BLOCK(4K)*/ :/* ALIGN(4K)*/ {
     __data_start = .;
     *(.data)
   }
 
-  .bss BLOCK(4K) : ALIGN(4K) {
+  .bss /*BLOCK(4K)*/ :/* ALIGN(4K)*/ {
     __bss_start = .;
     *(.bss)
     __bss_end = .;

@@ -3,7 +3,7 @@ extern kernel_entry
 MAGIC_NUMBER equ 0x1BADB002
 PAGE_ALIGN_FLAG equ   1 << 0
 MEMORY_INFO_FLAG equ  1 << 1
-HEADER_FLAG equ PAGE_ALIGN_FLAG | MEMORY_INFO_FLAG
+HEADER_FLAG equ MEMORY_INFO_FLAG
 
 section .multiboot
 align 4
