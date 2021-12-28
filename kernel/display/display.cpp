@@ -76,7 +76,7 @@ void set_offset(uint16_t offset) {
 }
 
 uint16_t get_offset() {
-  return current_offset;
+  return current_offset / 2;
 }
 
 void set_style(StyleAttribute style) {

@@ -61,7 +61,11 @@ uint16_t get_cursor_pos();
 void set_style(StyleAttribute);
 StyleAttribute get_style();
 
-// todo: better name
+/*
+  Character Offset
+  Specifies the position on which next drawing command will take place
+  'Put' family of functions always moves the offset so you can use it for sequential printing
+*/
 void set_offset(uint16_t offset);
 uint16_t get_offset();
 

@@ -2,7 +2,7 @@
 namespace CPU {
 
 inline void interrupt(uint8_t code) {
-  asm volatile("int %0" : : "n" (code));
+  asm volatile("int %0" : : "i" (code));
 }
 
 inline void enable_interrupts() {
