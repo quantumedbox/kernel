@@ -3,21 +3,18 @@ CXX_SOURCES = $(wildcard ./kernel/*.cpp ./kernel/cpu/*.cpp ./kernel/io/*.cpp ./k
 OBJ = ${CXX_SOURCES:.cpp=.o kernel/cpu/interrupts.o}
 
 CXXFLAGS := -ffreestanding -nostdlib -g -Wall -Wextra -Os -fno-exceptions -fno-rtti
-log_name := "log.txt"
+log_name := "log"
 
 .PHONY: clean run debug
 
-os-image.bin: boot/bootsect.bin kernel.bin
-	cat $^ > $@
+# os-image.bin: boot/bootsect.bin kernel.bin
+# 	cat $^ > $@
 
-kernel.bin: boot/kernel_entry.o $(OBJ)
-	i686-elf-ld -m elf_i386 -T link.ld -o $@ -Ttext 0x1000 $^ --oformat binary
-
-kernel.elf: boot/kernel_entry.o $(OBJ)
-	i686-elf-ld -o $@ -Ttext 0x1000 $^
+os-image.elf: boot/multiboot1/entry.o boot/kernel_entry.o $(OBJ)
+	i686-elf-ld -T link.ld -o $@ $^
 
 %.o: %.cpp
-	${CXX} ${CXXFLAGS} -c $< -o $@ -I ./kernel/
+	${CXX} ${CXXFLAGS} -c $< -o $@ -I ./kernel/ -I ./boot/
 
 %.o: %.asm
 	nasm $< -f elf32 -o $@ -I ./boot/
@@ -25,12 +22,12 @@ kernel.elf: boot/kernel_entry.o $(OBJ)
 %.bin: %.asm
 	nasm $< -f bin -o $@ -I ./boot/
 
-run: os-image.bin
-	qemu-system-i386 -drive format=raw,file=$< -serial file:$(log_name)
+run: os-image.elf
+	qemu-system-i386 -kernel $< -serial file:$(log_name)
 
-debug: os-image.bin
-	qemu-system-i386 -s -S -drive format=raw,file=$< -serial file:$(log_name) &
-	i686-elf-gdb -ex "target remote localhost:1234" -ex "symbol-file kernel.bin"
+# debug: os-image.bin os-image.elf
+# 	qemu-system-i386 -s -S -drive format=raw,file=$< -serial file:$(log_name) &
+# 	i686-elf-gdb -ex "target remote localhost:1234" -ex "symbol-file os-image.elf"
 
 clean:
 	find ./ -type f -name '*.bin' -exec rm {} +

@@ -1,3 +1,5 @@
+#include "multiboot1/header.h"
+
 #include "display/display.hpp"
 #include "io/port.hpp"
 #include "std/string.hpp"
@@ -8,15 +10,25 @@ using namespace VgaDisplay;
 
 #define DO_INFINITE_LOOP() do { while (1) { __asm__ ("hlt"); } } while (0)
 
-extern "C" void kernel_entry() {
-  // CPU::idt_init();
-  // CPU::enable_interrupts();
+extern "C" void kernel_entry(multiboot_info_t* info, uint32_t magic_number) {
+  if (magic_number != MULTIBOOT_BOOTLOADER_MAGIC) {
+    put_string(string_from_literal("invalid magic number"));
+    goto error_label;
+  }
 
-  // set_style(init_style<Color::LightGray, Color::Blue>());
-  // fill_screen(' ');
+  // if (!(info->flags >> 6 & 0x1)) {
+  //   put_string(string_from_literal("invalid memory map"));
+  //   goto error_label;
+  // }
 
-  // Keyboard::init_ps2();
-  // Keyboard::set_led_state(Keyboard::init_led_state<true, true, true>());
+  CPU::idt_init();
+  CPU::enable_interrupts();
+
+  set_style(init_style<Color::LightGray, Color::Blue>());
+  fill_screen(' ');
+
+  Keyboard::init_ps2();
+  Keyboard::set_led_state(Keyboard::init_led_state<true, true, true>());
 
   // // IO::SerialPort COM1 { IO::SERIAL_PORT_ADDRESSES[0] };
   // // if (COM1.is_ok()) {
@@ -26,15 +38,16 @@ extern "C" void kernel_entry() {
   // //   put_string(string_from_literal("couldn't initialize COM1"));
   // // newline_offset();
 
-  // set_style(init_style<Color::Yellow, Color::Black>());
-  // put_string(string_from_literal("hello world"));
+  set_style(init_style<Color::Yellow, Color::Black>());
+  put_string(string_from_literal("hello world"));
 
-  // newline_offset();
+  newline_offset();
 
-  // set_style(init_style<Color::Red, Color::LightGray>());
-  // put_string(string_from_literal("attempt to exit kernel entry, halt in infinite loop"));
+  set_style(init_style<Color::Red, Color::LightGray>());
+  put_string(string_from_literal("attempt to exit kernel entry, halt in infinite loop"));
 
-  // set_cursor_pos(get_offset());
+  set_cursor_pos(get_offset());
 
+error_label:
   DO_INFINITE_LOOP();
 }

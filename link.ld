@@ -1,23 +1,35 @@
-/*ENTRY(_bios_entry)*/
+ENTRY(_entry)
+/*OUTPUT_FORMAT(elf_32)*/
+KERNEL_OFFSET = 0x1000;
 
 SECTIONS {
-  . = 0x1000;
 
-  .text /*BLOCK(4K)*/ : /*ALIGN(4K)*/ {
-    *(.boot)
+  . = KERNEL_OFFSET;
+
+  __kernel_base = .;
+
+  .text BLOCK(4K) : ALIGN(4K) {
+    __text_start = .;
+    *(.multiboot)
+    *(.text)
+    __text_end = .;
   }
 
-  .rodata /*BLOCK(4K)*/ : /*ALIGN(4K)*/ {
+  .rodata BLOCK(4K) : ALIGN(4K) {
+    __rodata_start = .;
     *(.rodata)
   }
 
-  .data /*BLOCK(4K)*/ : /*ALIGN(4K)*/ {
+  .data BLOCK(4K) : ALIGN(4K) {
+    __data_start = .;
     *(.data)
   }
 
-  .bss /*BLOCK(4K)*/ : /*ALIGN(4K)*/ {
-    /**(COMMON)*/
+  .bss BLOCK(4K) : ALIGN(4K) {
+    __bss_start = .;
     *(.bss)
+    __bss_end = .;
+    *(COMMON)
   }
 
   /DISCARD/ :
@@ -27,5 +39,7 @@ SECTIONS {
     *(.eh_frame*)
     *(.comment)
   }
+
+  __end = .;
 
 }
