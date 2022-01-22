@@ -80,7 +80,7 @@ uint16_t get_offset();
 void newline_offset();
 
 void put_char(uint8_t);
-void put_string(const KS::String);
+void put_string(const KS::StringView);
 void put_uint32(uint32_t);
 
 void fill_screen(uint8_t ch);

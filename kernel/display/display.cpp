@@ -2,7 +2,7 @@
 
 #include "display.hpp"
 #include "io/port.hpp"
-#include "memory.h"
+#include "memory.hpp"
 
 // helpful reference: http://www.osdever.net/FreeVGA/vga/crtcreg.htm#0A
 
@@ -104,7 +104,7 @@ void put_char(uint8_t character) {
   } \
 } while (0)
 
-void put_string(const KS::String string) {
+void put_string(const KS::StringView string) {
   put_string_impl_expand(string);
 }
 
@@ -120,7 +120,7 @@ void put_uint32(uint32_t value) {
     reductor /= 10;
   } while (reductor != 0);
 
-  put_string_impl_expand(KS::String(&builder_buff[builder_idx], MAX_CHARS - builder_idx));
+  put_string_impl_expand(KS::StringView(&builder_buff[builder_idx], MAX_CHARS - builder_idx));
 }
 
 void newline_offset() {

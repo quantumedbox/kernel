@@ -7,9 +7,6 @@ log_name := "log"
 
 .PHONY: clean run debug
 
-# os-image.bin: boot/bootsect.bin kernel.bin
-# 	cat $^ > $@
-
 os-image.bin: os-image.elf
 	objcopy -S $< $@
 

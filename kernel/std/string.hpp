@@ -1,12 +1,19 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
+
+// todo: it's possible to create string literals objects without them storing their size
+//       we might just separate such strings from others, tho is there a real need?
 
 namespace KS {
 
-class String {
-  const size_t len;
+/*
+  String view class used in kernel for passing rodata strings and such
+*/
+class StringView {
   const uint8_t* chars;
+  const size_t len;
 
 public:
 
@@ -19,18 +26,16 @@ public:
                  or should it be just a valid part of data without ensuring anything
   */
   template<size_t len>
-  constexpr String(const char (&str) [len])
-    : len (len)
-    , chars ((uint8_t*)&str)
+  constexpr StringView(const char (&str) [len])
+    : chars ((uint8_t*)&str)
+    , len (len)
   {
-
   }
 
-  String(const uint8_t* str, size_t len)
-    : len (len)
-    , chars (str)
+  StringView(const uint8_t* str, size_t len)
+    : chars (str)
+    , len (len)
   {
-
   }
 
   size_t get_len() const { return len; }

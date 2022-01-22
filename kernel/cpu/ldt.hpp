@@ -8,7 +8,10 @@
 
 #include <stdint.h>
 
-namespace CPU {
+#include "x86.hpp"
+
+namespace CPU
+{
 
 enum {
   IRQ0 = 32, // system timer
@@ -29,23 +32,15 @@ enum {
   IRQ15  // secondary ATA channel
 };
 
-typedef struct {
-  // data sector selector
-  uint32_t ds;
-  uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
-  uint32_t int_no, err_code;
-  uint32_t eip, cs, eflags, useresp, ss;
-} Registers;
-
-typedef void (*InterruptHandler)(Registers*);
+typedef void (*InterruptHandler)(CpuState*);
 
 void idt_init();
 void set_ldt_gate(uint8_t idx, uint32_t hadler);
 void register_interrupt_handler(uint8_t idx, InterruptHandler);
 
 extern "C" {
-  void isr_handler(Registers*);
-  void irq_handler(Registers*);
+  void isr_handler(CpuState*);
+  void irq_handler(CpuState*);
 
   extern void isr0();
   extern void isr1();

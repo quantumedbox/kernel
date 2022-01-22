@@ -2,7 +2,9 @@
 #include "io/port.hpp"
 #include "display/display.hpp"
 #include "std/string.hpp"
-#include "memory.h"
+#include "std/array.hpp"
+#include "memory.hpp"
+#include "panic.hpp"
 
 namespace CPU {
 
@@ -35,14 +37,14 @@ constexpr IO::Port PIC2_data_port { 0xa1 };
 static void idt_load() {
   ldt_descriptor.base = (uint32_t)&ldt;
   ldt_descriptor.limit = N_LDT_GATES * sizeof(LdtDescriptor) - 1;
-  asm volatile("lidt (%0)" : : "m" (ldt_descriptor));
+  asm volatile("lidt %0" : : "m" (ldt_descriptor));
 }
 
 void set_ldt_gate(uint8_t idx, uint32_t handler) {
   ldt[idx].low_offset = LOW_16(handler);
-  ldt[idx].selector = 0x08;
+  ldt[idx].selector = 0x08; // todo: make it dependent on selector definition from GDT
   ldt[idx].zero_segment = 0;
-  ldt[idx].flags = 0x8e; // todo: pass flags externally
+  ldt[idx].flags = 0x8e; // todo: pass flags by function parameters
   ldt[idx].high_offset = HIGH_16(handler);
 }
 
@@ -51,36 +53,37 @@ void register_interrupt_handler(uint8_t idx, InterruptHandler handler) {
   interrupt_handlers[idx] = handler;
 }
 
-// constexpr KS::String exception_messages[N_RESERVED_IDT_EXCEPTIONS] = {
-//   KS::String("div by 0"),
-//   KS::String("-- single-step interrupt"),
-//   KS::String("-- non-maskable interrupt"),
-//   KS::String("-- breakpoint"),
-//   KS::String("overflow"),
-//   KS::String("bound range exceeded"),
-//   KS::String("invalid opcode"),
-//   KS::String("coprocessor not available"),
-//   KS::String("double fault"),
-//   KS::String("invalid task state segment"),
-//   KS::String("segment not present"),
-//   KS::String("stack segment fault"),
-//   KS::String("-- general protection fault"),
-//   KS::String("page fault"),
-//   KS::String("-- reserved interrupt"),
-//   KS::String("floating point exception"),
-//   KS::String("alignment check"),
-//   KS::String("machine check"),
-//   KS::String("simd floating point exception"),
-//   KS::String("virtualization exception"),
-//   KS::String("control protection exception")
+// constexpr KS::Array<KS::StringView, N_RESERVED_IDT_EXCEPTIONS> exception_messages {
+//   KS::StringView("div by 0"),
+//   KS::StringView("-- single-step interrupt"),
+//   KS::StringView("-- non-maskable interrupt"),
+//   KS::StringView("-- breakpoint"),
+//   KS::StringView("overflow"),
+//   KS::StringView("bound range exceeded"),
+//   KS::StringView("invalid opcode"),
+//   KS::StringView("coprocessor not available"),
+//   KS::StringView("double fault"),
+//   KS::StringView("invalid task state segment"),
+//   KS::StringView("segment not present"),
+//   KS::StringView("stack segment fault"),
+//   KS::StringView("-- general protection fault"),
+//   KS::StringView("page fault"),
+//   KS::StringView("-- reserved interrupt"),
+//   KS::StringView("floating point exception"),
+//   KS::StringView("alignment check"),
+//   KS::StringView("machine check"),
+//   KS::StringView("simd floating point exception"),
+//   KS::StringView("virtualization exception"),
+//   KS::StringView("control protection exception")
 // };
 
-extern "C" void isr_handler(Registers* r) {
-  // VgaDisplay::put_string(exception_messages[r->int_no]);
-  // VgaDisplay::newline_offset();
+// todo: pass text of exception
+extern "C" void isr_handler(CpuState* r) {
+  (void)r;
+  panic(KS::StringView{"exception occured"});
 }
 
-extern "C" void irq_handler(Registers* r) {
+extern "C" void irq_handler(CpuState* r) {
   if (r->int_no >= IRQ8)
     PIC2_command_port.put_byte(0x20);
   PIC1_command_port.put_byte(0x20);
